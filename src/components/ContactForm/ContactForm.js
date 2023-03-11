@@ -1,5 +1,7 @@
 import { useState } from 'react';
-import PropTypes from 'prop-types';
+import { useDispatch, useSelector } from 'react-redux';
+import { filterValue, getItem, newContacts } from 'redux/itemsContacts';
+import { nanoid } from 'nanoid';
 import {
   Title,
   FormContact,
@@ -8,36 +10,42 @@ import {
   FormInput,
 } from './ContactForm.styled';
 
-function ContactForm({ onSubmit }) {
-  const [name, setName] = useState('');
-  const [number, setNumber] = useState('');
+const initialState = {
+  name: '',
+  number: '',
+};
 
-  const handleChange = evt => {
-    switch (evt.target.name) {
-      case 'name':
-        setName(evt.target.value);
-        break;
-      case 'number':
-        setNumber(evt.target.value);
-        break;
-      default:
-        return;
+function ContactForm() {
+  const [{ name, number }, setState] = useState(initialState);
+  const dispatch = useDispatch();
+  const contacts = useSelector(getItem);
+
+  function onChange(e) {
+    const { name, value } = e.target;
+    setState(prevState => ({ ...prevState, [name]: value }));
+  }
+
+  function onSubmit(e) {
+    e.preventDefault();
+    const newCont = {
+      id: nanoid(10),
+      name,
+      number,
+    };
+
+    if (contacts.some(x => x.name === newCont.name)) {
+      alert(`${newCont.name} is already in contacts`);
+      return;
     }
-  };
 
-  const handleSubmit = evt => {
-    evt.preventDefault();
-    onSubmit({ name, number });
-    resetForm();
-  };
+    dispatch(newContacts(newCont));
+    dispatch(filterValue(''));
 
-  const resetForm = () => {
-    setName('');
-    setNumber('');
-  };
+    setState({ ...initialState });
+  }
 
   return (
-    <FormContact onSubmit={handleSubmit}>
+    <FormContact onSubmit={onSubmit}>
       <Title>Phonebook</Title>
       <FormLabel>
         Name
@@ -48,7 +56,7 @@ function ContactForm({ onSubmit }) {
           title="Name may contain only letters, apostrophe, dash and spaces. For example Adrian, Jacob Mercer, Charles de Batz de Castelmore d'Artagnan"
           value={name}
           placeholder="🙍‍♂️ Enter contact name"
-          onChange={handleChange}
+          onChange={onChange}
           required
         />
       </FormLabel>
@@ -61,7 +69,7 @@ function ContactForm({ onSubmit }) {
           title="Phone number must be digits and can contain spaces, dashes, parentheses and can start with +"
           value={number}
           placeholder="📞 Enter phone number"
-          onChange={handleChange}
+          onChange={onChange}
           required
         />
       </FormLabel>
@@ -71,7 +79,3 @@ function ContactForm({ onSubmit }) {
 }
 
 export default ContactForm;
-
-ContactForm.propTypes = {
-  onSubmit: PropTypes.func.isRequired,
-};
